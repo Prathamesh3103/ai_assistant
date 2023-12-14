@@ -1,4 +1,5 @@
 import 'package:ai_assistant/chat_box.dart';
+import 'package:ai_assistant/openai_service.dart';
 import 'package:ai_assistant/pallet.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -15,6 +16,7 @@ class _HomePageState extends State<HomePage> {
   SpeechToText speechToText = SpeechToText();
   String speech = '';
   bool speechEnabled = false;
+  final OpenAIService openAIService = OpenAIService();
   @override
   void initState() {
     super.initState();
@@ -33,6 +35,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> stopListening() async {
     await speechToText.stop();
+
     setState(() {});
   }
 
@@ -164,6 +167,7 @@ class _HomePageState extends State<HomePage> {
           if (await speechToText.hasPermission && speechToText.isNotListening) {
             await startListening();
           } else if (speechToText.isListening) {
+            await openAIService.isArtPromptAPI(speech);
             await stopListening();
           } else {
             initializeSpeechToText();
