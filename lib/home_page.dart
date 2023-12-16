@@ -24,6 +24,8 @@ class _HomePageState extends State<HomePage> {
   String? generatedImageUrl;
   int start = 200;
   int delay = 200;
+  bool isShowSendButton = false;
+  final TextEditingController _messageController = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -204,37 +206,108 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )
               ],
-            )
-          ],
-        ),
-      ),
-      floatingActionButton: ZoomIn(
-        delay: Duration(microseconds: start + 3 * delay),
-        child: FloatingActionButton(
-          backgroundColor: Pallete.firstSuggestionBoxColor,
-          onPressed: () async {
-            if (await speechToText.hasPermission &&
-                speechToText.isNotListening) {
-              await startListening();
-            } else if (speechToText.isListening) {
-              final speech = await openAIService.isArtPromptAPI(words);
-              if (speech.contains('https')) {
-                generatedImageUrl = speech;
-                generatedContent = null;
-                setState(() {});
-              } else {
-                generatedImageUrl = null;
-                generatedContent = speech;
-                setState(() {});
-                await systemSpeak(speech);
-              }
+            ),
+            Row(
+              children: [
+                SizedBox(
+                  width: 40,
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller: _messageController,
+                    onChanged: (val) {
+                      if (val.isNotEmpty) {
+                        setState(() {
+                          isShowSendButton = true;
+                        });
+                      } else {
+                        setState(() {
+                          isShowSendButton = false;
+                        });
+                      }
+                    },
+                    decoration: const InputDecoration(
+                        filled: true,
+                        fillColor: Pallete.firstSuggestionBoxColor,
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+                        ),
+                        hintText: 'Type a message',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                          borderSide: BorderSide(
+                            width: 0,
+                            style: BorderStyle.none,
+                          ),
+                        ),
+                        contentPadding: EdgeInsets.all(2)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: 8,
+                    right: 2,
+                    left: 2,
+                  ),
+                  child: CircleAvatar(
+                    backgroundColor: Pallete.secondSuggestionBoxColor,
+                    radius: 25,
+                    child: GestureDetector(
+                      child: Icon(
+                        isShowSendButton
+                            ? Icons.send
+                            : speechToText.isListening
+                                ? Icons.stop
+                                : Icons.mic,
+                        color: Colors.white,
+                      ),
+                      onTap: () async {
+                        if (isShowSendButton) {
+                          final speech = await openAIService.isArtPromptAPI(
+                            _messageController.text.trim(),
+                          );
+                          if (speech.contains('https')) {
+                            generatedImageUrl = speech;
+                            generatedContent = null;
+                            setState(() {});
+                          } else {
+                            generatedImageUrl = null;
+                            generatedContent = speech;
+                            setState(() {});
+                            await systemSpeak(speech);
+                          }
+                        } else {
+                          if (await speechToText.hasPermission &&
+                              speechToText.isNotListening) {
+                            await startListening();
+                          } else if (speechToText.isListening) {
+                            final speech =
+                                await openAIService.isArtPromptAPI(words);
+                            if (speech.contains('https')) {
+                              generatedImageUrl = speech;
+                              generatedContent = null;
+                              setState(() {});
+                            } else {
+                              generatedImageUrl = null;
+                              generatedContent = speech;
+                              setState(() {});
+                              await systemSpeak(speech);
+                            }
 
-              await stopListening();
-            } else {
-              initializeSpeechToText();
-            }
-          },
-          child: Icon(speechToText.isListening ? Icons.stop : Icons.mic),
+                            await stopListening();
+                          } else {
+                            initializeSpeechToText();
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
